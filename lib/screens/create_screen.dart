@@ -1,7 +1,7 @@
+import 'package:color_note/database/notes_db.dart';
 import 'package:color_note/models/note.dart';
 import 'package:color_note/widgets/round_checkbox.dart';
 import 'package:flutter/material.dart';
-import 'package:sqflite/sqflite.dart';
 
 class CreateScreen extends StatefulWidget {
   @override
@@ -10,20 +10,15 @@ class CreateScreen extends StatefulWidget {
 
 class _CreateScreenState extends State<CreateScreen> {
   final _formKey = GlobalKey<FormState>();
-  Note note = Note();
+  NotesDb _db;
 
+  Note note = Note();
   Color _noteColor = Colors.grey[300];
 
-  void addData() async {
-    Database db = await openDatabase(
-      'notes.db',
-      onCreate: (db, version) {
-        db.execute('CREATE TABLE notes(id INTEGER PRIMARY KEY AUTOINCREMENT, title VARCHAR(50), details TEXT, color VARCHAR(11))');
-      },
-      version: 2,
-    );
-    await db.insert('notes', note.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
-    Navigator.pushReplacementNamed(context, '/');
+  @override
+  void initState() {
+    super.initState();
+    _db = NotesDb();
   }
 
   @override
@@ -100,14 +95,16 @@ class _CreateScreenState extends State<CreateScreen> {
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
                     if (_formKey.currentState.validate()) {
                       _formKey.currentState.save();
                       note.color = _noteColor;
                       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                         content: const Text('Saving data'),
                       ));
-                      addData();
+
+                      await _db.addNote(note.toMap());
+                      Navigator.pushReplacementNamed(context, '/');
                     }
                   },
                   child: const Text('CREATE'),

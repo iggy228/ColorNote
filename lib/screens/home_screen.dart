@@ -1,7 +1,7 @@
+import 'package:color_note/database/notes_db.dart';
 import 'package:color_note/models/note.dart';
 import 'package:color_note/widgets/note_card.dart';
 import 'package:flutter/material.dart';
-import 'package:sqflite/sqflite.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -9,41 +9,25 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final List<Note> notes = [];
-  Database db;
+  final List<Note> _notes = [];
+  NotesDb _db;
 
-  void getNotes() async {
-    db = await openDatabase(
-      'notes.db',
-      onCreate: (db, version) {
-        db.execute('CREATE TABLE notes(id INTEGER PRIMARY KEY AUTOINCREMENT, title VARCHAR(50), details TEXT, color VARCHAR(11))');
-      },
-      version: 2,
-    );
-    List<Map> data = await db.query(
-      'notes',
-      columns: ['id', 'title', 'details', 'color'],
-    );
+  void setNotes() async {
+    _db = NotesDb();
+    await _db.connect();
+    List<Map<String, dynamic>> notes = await _db.notes;
 
-    data.forEach((row) {
+    notes.forEach((row) {
       setState(() {
-        notes.add(Note.fromMap(row));
+        _notes.add(Note.fromMap(row));
       });
     });
-  }
-
-  void deleteNote(int id) async {
-    await db.delete('notes', where: 'id = $id');
-
-    setState(() => notes.removeWhere((note) {
-      return note.id == id;
-    }));
   }
 
   @override
   void initState() {
     super.initState();
-    getNotes();
+    setNotes();
   }
 
   @override
@@ -57,13 +41,18 @@ class _HomeScreenState extends State<HomeScreen> {
         child: const Icon(Icons.add)
       ),
       body: ListView.builder(
-        itemCount: notes.length,
+        itemCount: _notes.length,
         itemBuilder: (_, index) {
           return NoteCard(
-            title: notes[index].title,
-            details: notes[index].details,
-            color: notes[index].color,
-            onPressed: () => deleteNote(notes[index].id),
+            title: _notes[index].title,
+            details: _notes[index].details,
+            color: _notes[index].color,
+            onPressed: () async {
+              await _db.deleteNote(_notes[index].id);
+              setState(() => _notes.removeWhere((note) {
+                return note.id == _notes[index].id;
+              }));
+            },
           );
         }
       ),
