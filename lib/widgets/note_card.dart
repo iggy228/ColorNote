@@ -30,9 +30,10 @@ class NoteCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(title, style: Theme.of(context).textTheme.headline5),
+                  Expanded(
+                    child: Text(title, style: Theme.of(context).textTheme.headline5)
+                  ),
                   IconButton(
                     icon: Icon(Icons.delete),
                     color: color.value == Colors.red.value ? Colors.black : Colors.red,
