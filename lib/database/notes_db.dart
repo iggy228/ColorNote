@@ -35,4 +35,10 @@ class NotesDb {
   Future<void> addNote(Map<String, dynamic> note) async {
     await _db.insert(tableName, note);
   }
+  
+  Future<void> updateNote(Map<String, dynamic> note) async {
+    await _db.execute('UPDATE notes SET title = ?, details = ?, color = ? WHERE id = ?',
+      [note['title'], note['details'], note['color'], note['id']]
+    );
+  }
 }

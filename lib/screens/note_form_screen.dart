@@ -3,22 +3,37 @@ import 'package:color_note/models/note.dart';
 import 'package:color_note/widgets/round_checkbox.dart';
 import 'package:flutter/material.dart';
 
-class CreateScreen extends StatefulWidget {
-  @override
-  _CreateScreenState createState() => _CreateScreenState();
+enum Mode {
+  CREATE, UPDATE
 }
 
-class _CreateScreenState extends State<CreateScreen> {
+class NoteFormScreen extends StatefulWidget {
+  final Note _currNote;
+
+  NoteFormScreen([this._currNote]);
+
+  @override
+  _NoteFormState createState() => _NoteFormState();
+}
+
+class _NoteFormState extends State<NoteFormScreen> {
   final _formKey = GlobalKey<FormState>();
+  Mode mode = Mode.CREATE;
   NotesDb _db;
 
   Note note = Note();
-  Color _noteColor = Colors.grey[300];
+  int _colorValue = Colors.grey[300].value;
 
   @override
   void initState() {
     super.initState();
     _db = NotesDb();
+
+    if (widget._currNote != null) {
+      note = Note.fromMap(widget._currNote.toMap());
+      _colorValue = note.color.value;
+      mode = Mode.UPDATE;
+    }
   }
 
   @override
@@ -33,7 +48,9 @@ class _CreateScreenState extends State<CreateScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
+                /// Title form field
                 TextFormField(
+                  initialValue: note.title,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please, enter some text';
@@ -48,7 +65,9 @@ class _CreateScreenState extends State<CreateScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
+                /// Details form field
                 TextFormField(
+                  initialValue: note.details,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please, enter some text';
@@ -68,28 +87,28 @@ class _CreateScreenState extends State<CreateScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: <Widget>[
                     RoundCheckBox(
-                      groupValue: _noteColor,
+                      groupValue: _colorValue,
                       color: Colors.grey[300],
-                      value: Colors.grey[300],
-                      onChange: (value) => setState(() => _noteColor = value),
+                      value: Colors.grey[300].value,
+                      onChange: (value) => setState(() => _colorValue = value),
                     ),
                     RoundCheckBox(
-                      groupValue: _noteColor,
+                      groupValue: _colorValue,
                       color: Colors.blue,
-                      value: Colors.blue,
-                      onChange: (value) => setState(() => _noteColor = value),
+                      value: Colors.blue.value,
+                      onChange: (value) => setState(() => _colorValue = value),
                     ),
                     RoundCheckBox(
-                      groupValue: _noteColor,
+                      groupValue: _colorValue,
                       color: Colors.green,
-                      value: Colors.green,
-                      onChange: (value) => setState(() => _noteColor = value),
+                      value: Colors.green.value,
+                      onChange: (value) => setState(() => _colorValue = value),
                     ),
                     RoundCheckBox(
-                      groupValue: _noteColor,
+                      groupValue: _colorValue,
                       color: Colors.red,
-                      value: Colors.red,
-                      onChange: (value) => setState(() => _noteColor = value),
+                      value: Colors.red.value,
+                      onChange: (value) => setState(() => _colorValue = value),
                     ),
                   ],
                 ),
@@ -98,16 +117,22 @@ class _CreateScreenState extends State<CreateScreen> {
                   onPressed: () async {
                     if (_formKey.currentState.validate()) {
                       _formKey.currentState.save();
-                      note.color = _noteColor;
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                        content: const Text('Saving data'),
+                      note.color = Color(_colorValue);
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text(mode == Mode.CREATE ? 'Saving...' : 'Updating...'),
                       ));
 
-                      await _db.addNote(note.toMap());
-                      Navigator.pushReplacementNamed(context, '/');
+                      if (mode == Mode.CREATE) {
+                        await _db.addNote(note.toMap());
+                      }
+                      else {
+                        await _db.updateNote(note.toMap());
+                      }
+                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                      Navigator.pop(context, note);
                     }
                   },
-                  child: const Text('CREATE'),
+                  child: Text(mode == Mode.CREATE ? 'CREATE' : 'UPDATE'),
                 ),
               ],
             ),
